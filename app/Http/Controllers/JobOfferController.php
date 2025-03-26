@@ -8,10 +8,48 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
+
+/**
+ * @OA\Schema(
+ *     schema="JobOffer",
+ *     @OA\Property(property="id", type="integer"),
+ *     @OA\Property(property="recruiter_id", type="integer"),
+ *     @OA\Property(property="title", type="string"),
+ *     @OA\Property(property="description", type="string"),
+ *     @OA\Property(property="location", type="string"),
+ *     @OA\Property(property="contract_type", type="string", enum={"full-time", "part-time", "freelance"}),
+ *     @OA\Property(property="salary", type="number", format="float"),
+ *     @OA\Property(property="posted_at", type="string", format="date-time"),
+ *     @OA\Property(property="status", type="string", enum={"draft", "published", "closed"}),
+ *     @OA\Property(property="created_at", type="string", format="date-time"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time"),
+ *     @OA\Property(
+ *         property="recruiter",
+ *         type="object",
+ *         @OA\Property(property="id", type="integer"),
+ *         @OA\Property(property="name", type="string"),
+ *         @OA\Property(property="email", type="string")
+ *     ),
+ *     @OA\Property(property="applications_count", type="integer")
+ * )
+ */
 class JobOfferController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * @OA\Get(
+     *     path="/api/job-offers",
+     *     summary="Get list of job offers",
+     *     tags={"Job Offers"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of job offers",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(ref="#/components/schemas/JobOffer")
+     *         )
+     *     )
+     * )
      */
     public function index()
     {
@@ -28,8 +66,39 @@ class JobOfferController extends Controller
         return response()->json($jobOffers);
     }
 
+    
     /**
-     * Store a newly created resource in storage.
+     * @OA\Post(
+     *     path="/api/job-offers",
+     *     summary="Create a new job offer",
+     *     tags={"Job Offers"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"title","description","location","contract_type","salary"},
+     *             @OA\Property(property="title", type="string", example="Senior Developer"),
+     *             @OA\Property(property="description", type="string", example="We are looking for a senior developer..."),
+     *             @OA\Property(property="location", type="string", example="New York"),
+     *             @OA\Property(property="contract_type", type="string", enum={"full-time", "part-time", "freelance"}, example="full-time"),
+     *             @OA\Property(property="salary", type="number", format="float", example=80000),
+     *             @OA\Property(property="status", type="string", enum={"draft", "published", "closed"}, example="published")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Job offer created successfully",
+     *         @OA\JsonContent(ref="#/components/schemas/JobOffer")
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Unauthorized access"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error"
+     *     )
+     * )
      */
     public function store(Request $request)
     {
@@ -64,8 +133,34 @@ class JobOfferController extends Controller
         return response()->json($jobOffer, 201);
     }
 
+    
     /**
-     * Display the specified resource.
+     * @OA\Get(
+     *     path="/api/job-offers/{id}",
+     *     summary="Get a specific job offer",
+     *     tags={"Job Offers"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Job offer ID",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Job offer details",
+     *         @OA\JsonContent(ref="#/components/schemas/JobOffer")
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Unauthorized access"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Job offer not found"
+     *     )
+     * )
      */
     public function show(string $id)
     {
@@ -78,8 +173,50 @@ class JobOfferController extends Controller
         return response()->json($jobOffer);
     }
 
+    
     /**
-     * Update the specified resource in storage.
+     * @OA\Put(
+     *     path="/api/job-offers/{id}",
+     *     summary="Update a job offer",
+     *     tags={"Job Offers"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Job offer ID",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"title","description","location","contract_type","salary"},
+     *             @OA\Property(property="title", type="string", example="Senior Developer"),
+     *             @OA\Property(property="description", type="string", example="We are looking for a senior developer..."),
+     *             @OA\Property(property="location", type="string", example="New York"),
+     *             @OA\Property(property="contract_type", type="string", enum={"full-time", "part-time", "freelance"}, example="full-time"),
+     *             @OA\Property(property="salary", type="number", format="float", example=80000),
+     *             @OA\Property(property="status", type="string", enum={"draft", "published", "closed"}, example="published")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Job offer updated successfully",
+     *         @OA\JsonContent(ref="#/components/schemas/JobOffer")
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Unauthorized access"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Job offer not found"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error"
+     *     )
+     * )
      */
     public function update(Request $request, string $id)
     {
@@ -109,8 +246,36 @@ class JobOfferController extends Controller
         return response()->json($jobOffer);
     }
 
+    
     /**
-     * Remove the specified resource from storage.
+     * @OA\Delete(
+     *     path="/api/job-offers/{id}",
+     *     summary="Delete a job offer",
+     *     tags={"Job Offers"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Job offer ID",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Job offer deleted successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Unauthorized access"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Job offer not found"
+     *     )
+     * )
      */
     public function destroy(string $id)
     {

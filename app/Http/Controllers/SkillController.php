@@ -4,13 +4,35 @@ namespace App\Http\Controllers;
 
 use App\Models\Skill;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
+
+/**
+ * @OA\Schema(
+ *     schema="Skill",
+ *     @OA\Property(property="id", type="integer"),
+ *     @OA\Property(property="name", type="string"),
+ *     @OA\Property(property="description", type="string", nullable=true),
+ *     @OA\Property(property="created_at", type="string", format="date-time"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time")
+ * )
+ */
 class SkillController extends Controller
 {
     /**
-     * Display a listing of skills.
+     * @OA\Get(
+     *     path="/api/skills",
+     *     summary="Get list of skills",
+     *     tags={"Skills"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of all skills",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(ref="#/components/schemas/Skill")
+     *         )
+     *     )
+     * )
      */
     public function index()
     {
@@ -18,8 +40,35 @@ class SkillController extends Controller
         return response()->json($skills);
     }
 
+    
     /**
-     * Store a newly created skill.
+     * @OA\Post(
+     *     path="/api/skills",
+     *     summary="Create a new skill",
+     *     tags={"Skills"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"name"},
+     *             @OA\Property(property="name", type="string", example="JavaScript"),
+     *             @OA\Property(property="description", type="string", example="Programming language for web development")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Skill created successfully",
+     *         @OA\JsonContent(ref="#/components/schemas/Skill")
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Unauthorized access"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error"
+     *     )
+     * )
      */
     public function store(Request $request)
     {
@@ -43,8 +92,29 @@ class SkillController extends Controller
         return response()->json($skill, 201);
     }
 
+    
     /**
-     * Display the specified skill.
+     * @OA\Get(
+     *     path="/api/skills/{id}",
+     *     summary="Get a specific skill",
+     *     tags={"Skills"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Skill ID",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Skill details",
+     *         @OA\JsonContent(ref="#/components/schemas/Skill")
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Skill not found"
+     *     )
+     * )
      */
     public function show(string $id)
     {
@@ -52,8 +122,45 @@ class SkillController extends Controller
         return response()->json($skill);
     }
 
+    
     /**
-     * Update the specified skill.
+     * @OA\Put(
+     *     path="/api/skills/{id}",
+     *     summary="Update a skill",
+     *     tags={"Skills"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Skill ID",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="name", type="string", example="JavaScript"),
+     *             @OA\Property(property="description", type="string", example="Updated description")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Skill updated successfully",
+     *         @OA\JsonContent(ref="#/components/schemas/Skill")
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Unauthorized access"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Skill not found"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error"
+     *     )
+     * )
      */
     public function update(Request $request, string $id)
     {
@@ -79,8 +186,36 @@ class SkillController extends Controller
         return response()->json($skill);
     }
 
+    
     /**
-     * Remove the specified skill.
+     * @OA\Delete(
+     *     path="/api/skills/{id}",
+     *     summary="Delete a skill",
+     *     tags={"Skills"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Skill ID",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Skill deleted successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Unauthorized access"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Skill not found"
+     *     )
+     * )
      */
     public function destroy(string $id)
     {

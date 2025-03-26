@@ -9,10 +9,57 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
+
+/**
+ * @OA\Schema(
+ *     schema="CV",
+ *     @OA\Property(property="id", type="integer"),
+ *     @OA\Property(property="user_id", type="integer"),
+ *     @OA\Property(property="title", type="string"),
+ *     @OA\Property(property="file_path", type="string"),
+ *     @OA\Property(property="file_type", type="string"),
+ *     @OA\Property(property="created_at", type="string", format="date-time"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time")
+ * )
+ */
 class CVController extends Controller
 {
     /**
-     * Store a newly created resource in storage.
+     * @OA\Post(
+     *     path="/api/cvs",
+     *     summary="Upload a new CV",
+     *     tags={"CVs"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 required={"file", "title"},
+     *                 @OA\Property(
+     *                     property="file",
+     *                     type="string",
+     *                     format="binary",
+     *                     description="CV file (PDF, DOC, DOCX, max 2MB)"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="title",
+     *                     type="string",
+     *                     description="CV title"
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="CV uploaded successfully",
+     *         @OA\JsonContent(ref="#/components/schemas/CV")
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error"
+     *     )
+     * )
      */
     public function store(Request $request)
     {
@@ -39,8 +86,41 @@ class CVController extends Controller
         return response()->json($cv, 201);
     }
 
+    
     /**
-     * Display the specified resource.
+     * @OA\Get(
+     *     path="/api/cvs/{id}",
+     *     summary="Get a specific CV",
+     *     tags={"CVs"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="CV ID",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="CV details with download URL",
+     *         @OA\JsonContent(
+     *             allOf={
+     *                 @OA\Schema(ref="#/components/schemas/CV"),
+     *                 @OA\Schema(
+     *                     @OA\Property(property="download_url", type="string", format="url")
+     *                 )
+     *             }
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Unauthorized access"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="CV not found"
+     *     )
+     * )
      */
     public function show(string $id)
     {
@@ -65,9 +145,57 @@ class CVController extends Controller
         
         return response()->json($cv);
     }
-
+    
+    
     /**
-     * Update the specified resource in storage.
+     * @OA\Put(
+     *     path="/api/cvs/{id}",
+     *     summary="Update a CV",
+     *     tags={"CVs"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="CV ID",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\RequestBody(
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 @OA\Property(
+     *                     property="file",
+     *                     type="string",
+     *                     format="binary",
+     *                     description="CV file (PDF, DOC, DOCX, max 2MB)"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="title",
+     *                     type="string",
+     *                     description="CV title"
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="CV updated successfully",
+     *         @OA\JsonContent(ref="#/components/schemas/CV")
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Unauthorized access"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="CV not found"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error"
+     *     )
+     * )
      */
     public function update(Request $request, string $id)
     {
@@ -106,8 +234,36 @@ class CVController extends Controller
         return response()->json($cv);
     }
 
+    
     /**
-     * Remove the specified resource from storage.
+     * @OA\Delete(
+     *     path="/api/cvs/{id}",
+     *     summary="Delete a CV",
+     *     tags={"CVs"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="CV ID",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="CV deleted successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Unauthorized access"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="CV not found"
+     *     )
+     * )
      */
     public function destroy(string $id)
     {
@@ -134,11 +290,9 @@ class CVController extends Controller
             return false;
         }
         
-        $hasApplied = $cv->user->applications()
-            ->whereHas('jobOffer', function($query) use ($user) {
+        $hasApplied = $cv->user->applications()->whereHas('jobOffer', function($query) use ($user) {
                 $query->where('recruiter_id', $user->id);
-            })
-            ->exists();
+            })->exists();
         
         return $hasApplied;
     }

@@ -5,15 +5,43 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Profile;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Hash;
 
 
+/**
+ * @OA\Schema(
+ *     schema="Profile",
+ *     @OA\Property(property="id", type="integer"),
+ *     @OA\Property(property="user_id", type="integer"),
+ *     @OA\Property(property="phone_number", type="string", nullable=true),
+ *     @OA\Property(property="image", type="string", nullable=true),
+ *     @OA\Property(property="created_at", type="string", format="date-time"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time")
+ * )
+ */
 class ProfileController extends Controller
 {
     /**
-     * Display the specified resource.
+     * @OA\Get(
+     *     path="/api/profile",
+     *     summary="Get authenticated user's profile",
+     *     tags={"Profile"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="User profile",
+     *         @OA\JsonContent(
+     *             @OA\Property(
+     *                 property="profile",
+     *                 ref="#/components/schemas/Profile"
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated"
+     *     )
+     * )
      */
     public function show(Request $request)
     {
@@ -21,8 +49,34 @@ class ProfileController extends Controller
         return response()->json(['profile' => $profile]);
     }
     
+    
     /**
-     * Update the specified resource in storage.
+     * @OA\Put(
+     *     path="/api/profile",
+     *     summary="Update user profile",
+     *     tags={"Profile"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="phone_number", type="string", example="555-123-4567"),
+     *             @OA\Property(property="image", type="string", example="base64_encoded_image_or_url")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Profile updated successfully",
+     *         @OA\JsonContent(ref="#/components/schemas/Profile")
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error"
+     *     )
+     * )
      */
     public function update(Request $request)
     {

@@ -9,10 +9,62 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
+
+/**
+ * @OA\Schema(
+ *     schema="Application",
+ *     @OA\Property(property="id", type="integer"),
+ *     @OA\Property(property="user_id", type="integer"),
+ *     @OA\Property(property="job_offer_id", type="integer"),
+ *     @OA\Property(property="cover_letter", type="string"),
+ *     @OA\Property(property="status", type="string", enum={"pending", "reviewed", "interview", "accepted", "rejected"}),
+ *     @OA\Property(property="cv_path", type="string", nullable=true),
+ *     @OA\Property(property="created_at", type="string", format="date-time"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time"),
+ *     @OA\Property(
+ *         property="user",
+ *         type="object",
+ *         @OA\Property(property="id", type="integer"),
+ *         @OA\Property(property="name", type="string"),
+ *         @OA\Property(property="email", type="string")
+ *     ),
+ *     @OA\Property(
+ *         property="job_offer",
+ *         type="object",
+ *         @OA\Property(property="id", type="integer"),
+ *         @OA\Property(property="title", type="string"),
+ *         @OA\Property(property="recruiter_id", type="integer")
+ *     )
+ * )
+ */
 class ApplicationController extends Controller
 {
     /**
-     * Display a listing of the applications.
+     * @OA\Get(
+     *     path="/api/applications",
+     *     summary="Get list of applications",
+     *     tags={"Applications"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="job_offer_id",
+     *         in="query",
+     *         description="Filter applications by job offer ID",
+     *         required=false,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of applications",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(ref="#/components/schemas/Application")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Unauthorized access"
+     *     )
+     * )
      */
     public function index(Request $request)
     {
@@ -43,8 +95,52 @@ class ApplicationController extends Controller
         return response()->json($applications);
     }
 
+    
     /**
-     * Store a newly created application.
+     * @OA\Post(
+     *     path="/api/applications",
+     *     summary="Submit a new application",
+     *     tags={"Applications"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 required={"job_offer_id", "cover_letter"},
+     *                 @OA\Property(
+     *                     property="job_offer_id",
+     *                     type="integer",
+     *                     description="ID of the job offer"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="cover_letter",
+     *                     type="string",
+     *                     description="Cover letter text"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="cv",
+     *                     type="string",
+     *                     format="binary",
+     *                     description="CV file (PDF, DOC, DOCX, max 2MB)"
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Application created successfully",
+     *         @OA\JsonContent(ref="#/components/schemas/Application")
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error or already applied"
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Unauthorized access"
+     *     )
+     * )
      */
     public function store(Request $request)
     {
@@ -84,8 +180,34 @@ class ApplicationController extends Controller
         return response()->json($application, 201);
     }
 
+    
     /**
-     * Display the specified application.
+     * @OA\Get(
+     *     path="/api/applications/{id}",
+     *     summary="Get a specific application",
+     *     tags={"Applications"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Application ID",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Application details",
+     *         @OA\JsonContent(ref="#/components/schemas/Application")
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Unauthorized access"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Application not found"
+     *     )
+     * )
      */
     public function show(string $id)
     {
@@ -96,8 +218,62 @@ class ApplicationController extends Controller
         return response()->json($application);
     }
 
+    
     /**
-     * Update the specified application.
+     * @OA\Put(
+     *     path="/api/applications/{id}",
+     *     summary="Update an application",
+     *     tags={"Applications"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Application ID",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\RequestBody(
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 @OA\Property(
+     *                     property="cover_letter",
+     *                     type="string",
+     *                     description="Cover letter text (for candidates)"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="cv",
+     *                     type="string",
+     *                     format="binary",
+     *                     description="CV file (PDF, DOC, DOCX, max 2MB) (for candidates)"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="status",
+     *                     type="string",
+     *                     enum={"pending", "reviewed", "interview", "accepted", "rejected"},
+     *                     description="Application status (for recruiters/admins)"
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Application updated successfully",
+     *         @OA\JsonContent(ref="#/components/schemas/Application")
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Unauthorized access"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Application not found"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error"
+     *     )
+     * )
      */
     public function update(Request $request, string $id)
     {
@@ -146,8 +322,36 @@ class ApplicationController extends Controller
         return response()->json($application);
     }
 
+    
     /**
-     * Remove the specified application.
+     * @OA\Delete(
+     *     path="/api/applications/{id}",
+     *     summary="Delete an application",
+     *     tags={"Applications"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Application ID",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Application deleted successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Unauthorized access"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Application not found"
+     *     )
+     * )
      */
     public function destroy(string $id)
     {

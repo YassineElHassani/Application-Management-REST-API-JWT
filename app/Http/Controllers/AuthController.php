@@ -11,6 +11,53 @@ use Illuminate\Support\Facades\Validator;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
 
+
+/**
+ * @OA\Schema(
+ *     schema="User",
+ *     @OA\Property(property="id", type="integer"),
+ *     @OA\Property(property="name", type="string"),
+ *     @OA\Property(property="email", type="string", format="email"),
+ *     @OA\Property(property="role", type="string", enum={"candidate", "recruiter", "admin"}),
+ *     @OA\Property(property="email_verified_at", type="string", format="date-time", nullable=true),
+ *     @OA\Property(property="created_at", type="string", format="date-time"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time"),
+ *     @OA\Property(
+ *         property="skills",
+ *         type="array",
+ *         @OA\Items(
+ *             type="object",
+ *             @OA\Property(property="id", type="integer"),
+ *             @OA\Property(property="name", type="string")
+ *         )
+ *     ),
+ *     @OA\Property(
+ *         property="profile",
+ *         type="object",
+ *         nullable=true,
+ *         @OA\Property(property="id", type="integer"),
+ *         @OA\Property(property="user_id", type="integer"),
+ *         @OA\Property(property="bio", type="string", nullable=true),
+ *         @OA\Property(property="address", type="string", nullable=true),
+ *         @OA\Property(property="phone", type="string", nullable=true),
+ *         @OA\Property(property="created_at", type="string", format="date-time"),
+ *         @OA\Property(property="updated_at", type="string", format="date-time")
+ *     ),
+ *     @OA\Property(
+ *         property="cvs",
+ *         type="array",
+ *         @OA\Items(ref="#/components/schemas/CV")
+ *     )
+ * )
+ * 
+ * @OA\Schema(
+ *     schema="AuthResponse",
+ *     @OA\Property(property="access_token", type="string"),
+ *     @OA\Property(property="token_type", type="string", example="bearer"),
+ *     @OA\Property(property="expires_in", type="integer"),
+ *     @OA\Property(property="user", ref="#/components/schemas/User")
+ * )
+ */
 class AuthController extends Controller
 {
     public function __construct()
@@ -18,6 +65,40 @@ class AuthController extends Controller
         $this->middleware('auth:api', ['except' => ['login', 'register']]);
     }
 
+
+    /**
+     * @OA\Post(
+     *     path="/api/auth/register",
+     *     summary="Register a new user",
+     *     tags={"Authentication"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"name","email","password","password_confirmation","role"},
+     *             @OA\Property(property="name", type="string", example="John Doe"),
+     *             @OA\Property(property="email", type="string", format="email", example="john@example.com"),
+     *             @OA\Property(property="password", type="string", format="password", example="password123"),
+     *             @OA\Property(property="password_confirmation", type="string", format="password", example="password123"),
+     *             @OA\Property(property="skills", type="array", @OA\Items(type="integer"), example={1,2,3}),
+     *             @OA\Property(property="role", type="string", enum={"candidate","recruiter","admin"}, example="candidate")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="User registered successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="access_token", type="string"),
+     *             @OA\Property(property="token_type", type="string", example="bearer"),
+     *             @OA\Property(property="expires_in", type="integer"),
+     *             @OA\Property(property="user", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error"
+     *     )
+     * )
+     */
     public function register(Request $request) {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
@@ -50,6 +131,40 @@ class AuthController extends Controller
         return $this->respondWithToken($token);
     }
 
+
+    /**
+     * @OA\Post(
+     *     path="/api/auth/login",
+     *     summary="Login a user",
+     *     tags={"Authentication"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"email","password"},
+     *             @OA\Property(property="email", type="string", format="email", example="john@example.com"),
+     *             @OA\Property(property="password", type="string", format="password", example="password123")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Login successful",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="access_token", type="string"),
+     *             @OA\Property(property="token_type", type="string", example="bearer"),
+     *             @OA\Property(property="expires_in", type="integer"),
+     *             @OA\Property(property="user", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error"
+     *     )
+     * )
+     */
     public function login(Request $request) {
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
@@ -69,6 +184,26 @@ class AuthController extends Controller
         return $this->respondWithToken($token);
     }
 
+
+    /**
+     * @OA\Post(
+     *     path="/api/auth/logout",
+     *     summary="Logout a user",
+     *     tags={"Authentication"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Logout successful",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Successfully logged out")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error"
+     *     )
+     * )
+     */
     public function logout() {
         try {
             JWTAuth::invalidate(JWTAuth::getToken());
@@ -78,6 +213,29 @@ class AuthController extends Controller
         }
     }
 
+
+    /**
+     * @OA\Post(
+     *     path="/api/auth/refresh",
+     *     summary="Refresh JWT token",
+     *     tags={"Authentication"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Token refreshed successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="access_token", type="string"),
+     *             @OA\Property(property="token_type", type="string", example="bearer"),
+     *             @OA\Property(property="expires_in", type="integer"),
+     *             @OA\Property(property="user", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Could not refresh token"
+     *     )
+     * )
+     */
     public function refresh()
     {
         try {
@@ -89,6 +247,29 @@ class AuthController extends Controller
         }
     }
 
+
+    /**
+     * @OA\Get(
+     *     path="/api/auth/user",
+     *     summary="Get authenticated user details",
+     *     tags={"Authentication"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="User details",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="id", type="integer"),
+     *             @OA\Property(property="name", type="string"),
+     *             @OA\Property(property="email", type="string"),
+     *             @OA\Property(property="role", type="string"),
+     *             @OA\Property(property="skills", type="array", @OA\Items(type="object")),
+     *             @OA\Property(property="profile", type="object"),
+     *             @OA\Property(property="cvs", type="array", @OA\Items(type="object"))
+     *         )
+     *     )
+     * )
+     */
     public function user()
     {
         $user = User::with(['skills', 'profile', 'cvs'])->find(auth()->guard('api')->id());
